@@ -14,6 +14,7 @@
 import pandas as pd
 import numpy as np
 from utils.functions import get_date_before, Caltime
+from functools import reduce
 
 user_pay_logs_fe1 = pd.read_csv("../samples/user_pay_logs_fe1.csv")
 # 统计最近15,31,90,180天内的情况
@@ -63,3 +64,12 @@ farthest_due_date = user_pay_logs_fe1.groupby(['user_id','auditing_date'])['due_
 
 latest_due_date['latest_due_date_diff'] = latest_due_date.apply(lambda x:Caltime(x['latest_due_date'],x['auditing_date']),axis=1)
 farthest_due_date['farthest_due_date_diff'] = farthest_due_date.apply(lambda x:Caltime(x['farthest_due_date'],x['auditing_date']),axis=1)
+
+user_repay_features2 = reduce(lambda x, y: pd.merge(x, y, on=['user_id','auditing_date'], how='outer'),
+                                   [user_daoqi_in15days,user_daoqi_in31days,user_daoqi_in90days,user_daoqi_in180days,
+user_daoqi_amt_in15days,user_daoqi_amt_in31days,user_daoqi_amt_in90days,user_daoqi_amt_in180days,
+user_yuqi_in15days,user_yuqi_in31days,user_yuqi_in90days,user_yuqi_in180days,
+user_yuqi_amt_in15days,user_yuqi_amt_in31days,user_yuqi_amt_in90days,user_yuqi_amt_in180days,
+latest_due_date,farthest_due_date])
+
+user_repay_features2.to_csv("../dataset/gen_features/user_repay_features2.csv",index=None)
