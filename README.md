@@ -194,12 +194,43 @@ final_loss = ∑w_i * L(x_i, y_i)
 严格按照线上方式构建线下评测。 使用2018/01/01-2018/09/30的数据作为训练集，2018/11/01-2018/12/31的数据作为线下验证集。
 
 ### 线下评测脚本
+```python
+from sklearn.model_selection import KFold
+kf = KFold(n_splits=30, shuffle=True, random_state=1)
+idxs = []
+for idx in kf.split(result_data):
+    idxs.append(idx[1])
+i = 0
+for idx in idxs:
+    result_data.loc[idx,'listing_group']  = i
+    i+=1
 
+test_result = pd.merge(test_result[['listing_id','repay_date','repay_amt_predict','repay_amt']], result_data, on='listing_id',how='inner')
+def rule(x):
+    rates = {
+        0:0.984977,
+        1:1.000038,
+        2:1.0185,
+        3:1.012136,
+        4:1.019214,
+        5:0.979497,
+        6:0.964942
+    }
+    return x['repay_amt_predict']*rates[ pd.to_datetime(x['repay_date']).weekday()]
+test_result['repay_amt_predict_adjust'] = test_result.apply(lambda x:rule(x),axis=1)
+result1 = test_result.groupby(['listing_group','repay_date'])['repay_amt_predict','repay_amt'].sum().reset_index()
+result2 = test_result.groupby(['listing_group','repay_date'])['repay_amt_predict_adjust','repay_amt'].sum().reset_index()
+from sklearn.metrics import mean_squared_error
+print(mean_squared_error(test_result.repay_amt_predict,test_result.repay_amt))
+print(math.sqrt(mean_squared_error(result1.repay_amt_predict,result1.repay_amt)))
+print(math.sqrt(mean_squared_error(result2.repay_amt_predict_adjust,result2.repay_amt)))
+```
 ### 误差结果分析
 
 
 ## 7. 建模感想
 学习到了什么东西 新的场景（多任务学习？！）
+模型训练优化目标和最后的评测目标之间存在差异时，一般都是需要加入后处理。
 优化问题（）回归，以及内存优化。
 我们模型的优点：
 1. 模拟构建出了线下测试集，规则引入简单有效。
