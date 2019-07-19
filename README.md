@@ -148,6 +148,8 @@
 ### 用户标签特征
 这里的用户标签是脱敏的，离散的并且是不等长的。通过Tfidf+TruncatedSVD的方式，抽象为文本主题模型，向量化到10维作为特征。
 ```python
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import TruncatedSVD
 vectorizer = TfidfVectorizer()
 X = vectorizer.fit_transform(user_tag.taglist.values)
 svd_enc = TruncatedSVD(n_components=10, n_iter=20, random_state=2019)
